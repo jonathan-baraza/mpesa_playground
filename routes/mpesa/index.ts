@@ -1,9 +1,7 @@
 import express, { Router } from "express";
-
+import { getAccessToken } from "../../controllers/mpesa";
 const router: Router = express.Router();
 
-router.get("/", (req, res) => {
-  res.status(200).json({ message: "Mpesa server is working okay" });
-});
+router.get("/", getAccessToken);
 
 export default router;
