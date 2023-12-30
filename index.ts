@@ -9,6 +9,9 @@ dotenv.config();
 const app: Express = express();
 const PORT = process.env.PORT;
 
+//parse body json
+app.use(express.json());
+
 app.use("/animals", testRoutes);
 app.use("/mpesa", mpesaRoutes);
 
