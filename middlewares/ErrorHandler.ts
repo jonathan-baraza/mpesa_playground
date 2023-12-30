@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-interface customError extends Error{
-    statusCode:number
+interface customError extends Error {
+  statusCode: number;
 }
 const ErrorHandler = (
   err: customError,
@@ -8,7 +8,6 @@ const ErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log("Middleware Error Hadnling");
   const errStatus = err.statusCode || 500;
   const errMsg = err.message || "Something went wrong";
   res.status(errStatus).json({
