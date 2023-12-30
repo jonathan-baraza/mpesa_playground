@@ -1,4 +1,4 @@
-export interface stkBodyType {
+export interface STKBodyType {
   BusinessShortCode: number;
   Password: string;
   Timestamp: string;
@@ -10,4 +10,10 @@ export interface stkBodyType {
   CallBackURL: string;
   AccountReference: string;
   TransactionDesc: string;
+}
+
+export interface getSTKPasswordTypes {
+  shortCode: string;
+  passKey: string;
+  timeStamp: string;
 }
