@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction, response } from "express";
 import axios from "axios";
 import { encodedToBase64, getSTKPassword, getTimeStamp } from "../../utils";
 import dotenv from "dotenv";
-import { STKBodyType } from "../../types";
+import { CustomRequest, STKBodyType } from "../../types";
 
 dotenv.config();
 
@@ -33,18 +33,22 @@ export const getAccessToken = async (next: NextFunction) => {
 };
 
 export const stkPush = async (
-  req: Request,
+  req: CustomRequest,
   res: Response,
   next: NextFunction
 ) => {
-  const accessToken = await getAccessToken(next);
-  const timeStamp = await getTimeStamp();
-  const STKPassword = await getSTKPassword({
-    shortCode: BUSINESS_SHORTCODE!,
-    passKey: PASS_KEY!,
-    timeStamp: timeStamp,
-  });
   try {
+    const { phone, amount } = req.body;
+    if (!phone || !amount) {
+      next(Error("Please provide both the phone number and the amount"));
+    }
+    const accessToken = await getAccessToken(next);
+    const timeStamp = await getTimeStamp();
+    const STKPassword = await getSTKPassword({
+      shortCode: BUSINESS_SHORTCODE!,
+      passKey: PASS_KEY!,
+      timeStamp: timeStamp,
+    });
     const requestBody: STKBodyType = {
       BusinessShortCode: Number(BUSINESS_SHORTCODE),
       Password: STKPassword,
@@ -75,8 +79,60 @@ export const stkPush = async (
     const ResponseCode = response?.data?.ResponseCode;
     const CustomerMessage = response?.data?.CustomerMessage;
 
-    if (!ResponseCode || ResponseCode !== "0") return next(Error("Not successful."))
-      res.status(200).json({ Success: true, ...response.data });
+    if (!ResponseCode || ResponseCode !== "0")
+      return next(Error("Not successful."));
+    res.status(200).json({ Success: true, ...response.data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const mpesaCallback = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    console.log("callback tings");
+    const MerchantRequestID = req.body.Body.stkCallback?.MerchantRequestID;
+    const CheckoutRequestID = req.body.Body.stkCallback?.CheckoutRequestID;
+    const ResultCode = req.body.Body.stkCallback?.ResultCode;
+    const ResultDesc = req.body.Body.stkCallback?.ResultDesc;
+
+    //response message to client
+    let responseMessage;
+
+    if (ResultCode != "0") {
+      // Means payment failed
+      responseMessage = {
+        CallbackSuccess: false,
+        CallbackMessage: "Payment Failed",
+        FailReason: ResultDesc,
+      };
+    } else {
+      // Means payment was successful
+      // Extracting values from the 'CallbackMetadata' object
+      const Amount =
+        req.body.Body.stkCallback?.CallbackMetadata?.Item[0]?.Value;
+      const Receipt =
+        req.body.Body.stkCallback?.CallbackMetadata?.Item[1]?.Value;
+      const TransactionDate =
+        req.body.Body.stkCallback?.CallbackMetadata?.Item[2]?.Value;
+      const PhoneNumber =
+        req.body.Body.stkCallback?.CallbackMetadata?.Item[3]?.Value;
+
+      responseMessage = {
+        CallbackSuccess: true,
+        CallbackMessage: ResultDesc,
+        MerchantRequestID,
+        CheckoutRequestID,
+        Amount,
+        PhoneNumber,
+      };
+    }
+    console.log("Mpesa Response callback");
+    console.log(responseMessage);
+    res.status(200).json(responseMessage);
   } catch (error) {
     next(error);
   }
