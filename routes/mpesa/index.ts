@@ -1,7 +1,9 @@
 import express, { Router } from "express";
-import { getAccessToken } from "../../controllers/mpesa";
+import { getAccessToken, stkPush } from "../../controllers/mpesa";
 const router: Router = express.Router();
 
-router.get("/", getAccessToken);
+router.get("/token", getAccessToken);
+router.post("/stk", stkPush);
+
 
 export default router;
