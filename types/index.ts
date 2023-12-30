@@ -1,3 +1,5 @@
+import { Request } from "express";
+
 export interface STKBodyType {
   BusinessShortCode: number;
   Password: string;
@@ -16,4 +18,11 @@ export interface getSTKPasswordTypes {
   shortCode: string;
   passKey: string;
   timeStamp: string;
+}
+
+export interface CustomRequest extends Request {
+  body: {
+    phone: number;
+    amount: number;
+  };
 }
